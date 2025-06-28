@@ -1,4 +1,8 @@
-import sys  # 导入 sys 模块，用于处理系统相关的功能
+import os
+import sys
+import sqlite3
+from pathlib import Path
+from datetime import datetime
 
 from PySide6.QtCore import Qt  # 设置对齐方式
 from PySide6.QtWidgets import (
@@ -17,8 +21,53 @@ from qfluentwidgets import (
     TableWidget,  # 表格组件
     setCustomStyleSheet  # 设置自定义样式
 )
+from loguru import logger
+from dotenv import find_dotenv, load_dotenv
 
 from viper.styles import ADD_BUTTON_STYLE, BATCH_DELETE_BUTTON_STYLE
+
+load_dotenv(find_dotenv())
+
+DEV_MODE = os.getenv('DEBUG') == '1'  # None
+
+if DEV_MODE:
+    BASE_DIR = Path(__file__).resolve().parent.parent
+else:
+    BASE_DIR = Path(sys.executable).parent  # 获取可执行文件所在目录
+
+LOG_DIR = Path(BASE_DIR) / 'logs'
+LOG_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_DIR = Path(BASE_DIR) / 'dbs'
+DB_DIR.mkdir(parents=True, exist_ok=True)
+
+DB_FILE = DB_DIR.joinpath(f'wutip_{datetime.now().strftime('%Y-%m-%d')}.db')
+LOG_FILE = LOG_DIR.joinpath(f'wutip_{datetime.now().strftime('%Y-%m-%d')}.log')
+
+logger.remove()
+
+logger.add(
+    LOG_FILE,
+    rotation='500MB',
+    format='{time:YYYY-MM-DD HH:mm:ss.SSS} - {level} - {message}',
+    encoding='utf-8',
+    enqueue=True,  # 启用异步日志处理
+    level='INFO',
+    diagnose=False,  # 关闭变量值
+    backtrace=False,  # 关闭完整堆栈跟踪
+    colorize=False
+)
+
+if DEV_MODE:
+    logger.add(
+        sink=sys.stdout,  # 输出到标准输出流
+        format='{time:YYYY-MM-DD HH:mm:ss.SSS} - {level} - {message}',  # 日志格式
+        level='DEBUG',
+        diagnose=False,
+        backtrace=False,
+        colorize=False,
+        enqueue=True
+    )
 
 
 class StudentInterface(QWidget):
@@ -75,6 +124,29 @@ class StudentInterface(QWidget):
         layout.addWidget(self.table_widget)
         self.setStyleSheet("StudentInterface{background: white}")  # 设置界面背景为白色
         self.resize(1280, 760)  # 设置窗口大小为 1280x760
+
+    @staticmethod
+    def create_db():
+        sql_str = '''
+            CREATE TABLE IF NOT EXISTS student (
+                student_id INTEGER PRIMARY KEY,
+                student_name TEXT NOT NULL,
+                student_number TEXT NOT NULL UNIQUE,
+                gender INTEGER NOT NULL,
+                class_id INTEGER NOT NULL,
+                chinese_score REAL,
+                math_score REAL,
+                english_score REAL
+            );
+        '''
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        try:
+            cursor.execute(sql_str)
+            conn.commit()
+        finally:
+            cursor.close()
+            conn.close()
 
     def load_data(self):  # 定义 load_data 方法，用于加载学生数据
         # 使用假数据替换数据库查询
