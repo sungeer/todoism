@@ -1,4 +1,4 @@
-# Nucleic
+# demo_wsgi
 
 *A backend scaffold depends on the Werkzeug WSGI toolkit.*
 
@@ -6,8 +6,8 @@
 
 clone:
 ```
-$ git clone https://github.com/sungeer/nucleic.git
-$ cd nucleic
+$ git clone https://github.com/sungeer/demo_wsgi.git
+$ cd demo_wsgi
 ```
 create & activate virtual env then install dependency:
 
@@ -20,8 +20,8 @@ $ pip install -r requirements.txt
 
 run:
 ```
-$ uvicorn nucleic:app
-* Running on http://127.0.0.1:8000/
+$ waitress --host=127.0.0.1 --port=7788 app:app
+* Running on http://127.0.0.1:7788/
 ```
 
 ## License
