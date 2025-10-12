@@ -2,24 +2,18 @@
 
 *We are todoist, we use todoism.*
 
-> Example application for *[Python Web Development with Flask](https://helloflask.com/en/book/1)* (《[Flask Web 开发实战](https://helloflask.com/book/1)》).
-
-Demo: http://todoism.helloflask.com
-
-![Screenshot](https://helloflask.com/screenshots/todoism.png)
-
 ## Installation
 
 clone:
 ```
-$ git clone https://github.com/greyli/todoism.git
+$ git clone https://github.com/sungeer/todoism.git
 $ cd todoism
 ```
 create & activate virtual env then install dependency:
 
 with venv/virtualenv + pip:
 ```
-$ python -m venv env  # use `virtualenv env` for Python2, use `python3 ...` for Python3 on Linux & macOS
+$ python -m venv env  # use `python3 ...` for Python3 on Linux & macOS
 $ source env/bin/activate  # use `env\Scripts\activate` on Windows
 $ pip install -r requirements.txt
 ```
