@@ -1,30 +1,42 @@
-# demo_wsgi
+# Todoism
 
-*A backend scaffold depends on the Werkzeug WSGI toolkit.*
+*We are todoist, we use todoism.*
+
+> Example application for *[Python Web Development with Flask](https://helloflask.com/en/book/1)* (《[Flask Web 开发实战](https://helloflask.com/book/1)》).
+
+Demo: http://todoism.helloflask.com
+
+![Screenshot](https://helloflask.com/screenshots/todoism.png)
 
 ## Installation
 
 clone:
 ```
-$ git clone https://github.com/sungeer/demo_wsgi.git
-$ cd demo_wsgi
+$ git clone https://github.com/greyli/todoism.git
+$ cd todoism
 ```
 create & activate virtual env then install dependency:
 
-with venv + pip:
+with venv/virtualenv + pip:
 ```
-$ python -m venv venv
-$ source venv/bin/activate  # use `venv\Scripts\activate` on Windows
+$ python -m venv env  # use `virtualenv env` for Python2, use `python3 ...` for Python3 on Linux & macOS
+$ source env/bin/activate  # use `env\Scripts\activate` on Windows
 $ pip install -r requirements.txt
 ```
-
-run:
+or with Pipenv:
 ```
-$ waitress --host=127.0.0.1 --port=7788 app:app
-* Running on http://127.0.0.1:7788/
+$ pipenv install --dev
+$ pipenv shell
+```
+init database then run:
+```
+$ flask initdb
+$ flask translate compile
+$ flask run
+* Running on http://127.0.0.1:5000/
 ```
 
 ## License
 
-This project is licensed under the GPL-3.0 License (see the
+This project is licensed under the MIT License (see the
 [LICENSE](LICENSE) file for details).
