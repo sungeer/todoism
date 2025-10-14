@@ -2,14 +2,12 @@ import os
 
 import click
 from flask import Flask, render_template, jsonify, request
-from flask_babel import _
-from flask_login import current_user
 
 from todoism.apis.v1 import api_v1
 from todoism.blueprints.auth import auth_bp
 from todoism.blueprints.home import home_bp
 from todoism.blueprints.todo import todo_bp
-from todoism.extensions import db, login_manager, csrf, babel
+from todoism.extensions import db, login_manager, csrf
 from todoism.models import User, Item
 from todoism.settings import config
 
@@ -34,7 +32,6 @@ def register_extensions(app):
     login_manager.init_app(app)
     csrf.init_app(app)
     csrf.exempt(api_v1)
-    babel.init_app(app)
 
 
 def register_blueprints(app):

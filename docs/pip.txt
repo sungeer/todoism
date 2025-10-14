@@ -3,12 +3,8 @@ pip cache purge  # 清除缓存
 pip freeze > requirements.txt
 pip install -r requirements.txt
 
-python -m pip install redis
-python -m pip install requests
 
-
-python -m pip install loguru orjson flask mysqlclient SQLAlchemy
-
+python -m pip install loguru orjson redis requests flask mysqlclient SQLAlchemy
 
 
 # prod
