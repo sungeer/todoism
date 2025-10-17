@@ -1,4 +1,3 @@
-from flask import request, current_app
 from flask_login import LoginManager, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect

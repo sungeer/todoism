@@ -4,6 +4,9 @@ pip freeze > requirements.txt
 pip install -r requirements.txt
 
 
+python -m pip install flask-login flask-mailman flask-wtf flask-cors
+
+
 python -m pip install loguru orjson redis requests flask mysqlclient SQLAlchemy
 
 
