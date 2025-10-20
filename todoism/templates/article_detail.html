@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ article.title }} - 示例博客</title>
+  <meta name="description" content="Flask + Jinja2 + Vue 3 组合式，无需打包的评论与点赞示例" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/article.css') }}" />
+  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js" crossorigin="anonymous"></script>
+</head>
+<body>
+  <header>
+    <div class="container">
+      <h1 class="article-title">{{ article.title }}</h1>
+      <div class="meta">示例博客 · 由 Flask 渲染</div>
+    </div>
+  </header>
+
+  <main class="container">
+    <article class="content">
+      <p>{{ article.content }}</p>
+    </article>
+
+    <section id="interactive-root" aria-labelledby="comments-heading">
+      <div class="like-row">
+        <button class="btn" type="button" @click="onLike" :disabled="likeSubmitting" aria-live="polite">
+          👍 点赞
+          <span v-if="likeSubmitting" class="muted">处理中…</span>
+        </button>
+        {% raw %}
+        <span>点赞数：{{ likes }}</span>
+        {% endraw %}
+      </div>
+
+      <h2 id="comments-heading">评论</h2>
+
+      <div class="comments">
+        <template v-if="comments.length === 0">
+          <p class="muted">暂无评论，快来抢沙发～</p>
+        </template>
+        {% raw %}
+        <div v-for="c in comments" :key="c.id" class="comment-item">
+          <div>
+            <span class="comment-author">{{ c.author }}</span>
+            <span class="comment-time">{{ c.created_at }}</span>
+          </div>
+          <div v-text="c.content"></div>
+        </div>
+        {% endraw %}
+      </div>
+
+      <form class="form" @submit.prevent="onSubmit">
+        <div>
+          <label for="author" class="sr-only">昵称</label>
+          <input id="author" class="input" type="text" placeholder="昵称（必填）" v-model.trim="form.author" maxlength="32" required />
+        </div>
+        <div>
+          <label for="content" class="sr-only">评论内容</label>
+          <textarea id="content" class="textarea" placeholder="友善发言，最多 1000 字（必填）" rows="4" v-model.trim="form.content" maxlength="1000" required></textarea>
+        </div>
+
+        {% raw %}
+        <div class="muted" v-if="submitError">{{ submitError }}</div>
+        {% endraw %}
+
+        <div style="display:flex; gap:8px;">
+          {% raw %}
+          <button class="btn" type="submit" :disabled="submitting">
+            {{ submitting ? "提交中…" : "发表评论" }}
+          </button>
+          <button class="btn" type="button" @click="refreshComments" :disabled="loadingComments">
+            {{ loadingComments ? "刷新中…" : "刷新评论" }}
+          </button>
+          {% endraw %}
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- 注入后端数据（供外部 JS 读取） -->
+  <script>
+    window.__ARTICLE_DATA__ = {
+      id: {{ article.id | int }},
+      likes: {{ article.likes | int }},
+      comments: {{ article.comments | tojson }}
+    };
+  </script>
+
+  <script src="{{ url_for('static', filename='js/article.js') }}"></script>
+</body>
+</html>
