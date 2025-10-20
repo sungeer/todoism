@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+<!--  {# <meta name="csrf-token" content="{{ csrf_token() }}" /> #}  -->
   <title>{{ article.title }} - 示例博客</title>
   <meta name="description" content="Flask + Jinja2 + Vue 3 组合式，无需打包的评论与点赞示例" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/article.css') }}" />
@@ -23,7 +24,7 @@
 
     <section id="interactive-root" aria-labelledby="comments-heading">
       <div class="like-row">
-        <button class="btn" type="button" @click="onLike" :disabled="likeSubmitting" aria-live="polite">
+        <button class="btn" type="button" v-on:click="onLike" v-bind:disabled="likeSubmitting" aria-live="polite">
           👍 点赞
           <span v-if="likeSubmitting" class="muted">处理中…</span>
         </button>
@@ -68,7 +69,7 @@
           <button class="btn" type="submit" :disabled="submitting">
             {{ submitting ? "提交中…" : "发表评论" }}
           </button>
-          <button class="btn" type="button" @click="refreshComments" :disabled="loadingComments">
+          <button class="btn" type="button" v-on:click="refreshComments" v-bind:disabled="loadingComments">
             {{ loadingComments ? "刷新中…" : "刷新评论" }}
           </button>
           {% endraw %}
@@ -86,6 +87,7 @@
     };
   </script>
 
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js" integrity="" crossorigin="anonymous"></script>
   <script src="{{ url_for('static', filename='js/article.js') }}"></script>
 </body>
 </html>
