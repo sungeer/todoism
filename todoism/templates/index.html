@@ -1,32 +1,183 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="zh-CN">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <meta charset="utf-8"/>
-    <title>Todoism</title>
-    <link href="{{ url_for('static', filename='css/materialize.min.css') }}" rel="stylesheet">
-    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
-    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
-    <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>极简待办（Flask 模板加载 + Vue3 组合式 + axios）</title>
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 16px; }
+    .row { margin-bottom: 12px; }
+    .counts { margin: 8px 0; color: #555; }
+    .filters button { margin-right: 8px; }
+    ul { padding-left: 20px; }
+    li { margin: 6px 0; }
+    .done { color: #999; text-decoration: line-through; }
+  </style>
 </head>
 <body>
-<div id="main"></div>
-<script src="{{ url_for('static', filename='js/jquery.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/materialize.min.js') }}"></script>
-<script src="{{ url_for('static', filename='js/script.js') }}" type="text/javascript"></script>
-<script type="text/javascript">
-    var csrf_token = "{{ csrf_token() }}";
-    var login_page_url = "{{ url_for('auth.login') }}";
-    var app_page_url = "{{ url_for('todo.app') }}";
-    var intro_page_url = "{{ url_for('home.intro') }}";
-    var new_item_url = "{{ url_for('todo.new_item') }}";
-    var clear_item_url = "{{ url_for('todo.clear_items') }}";
-    var login_url = "{{ url_for('auth.login') }}";
-    var register_url = "{{ url_for('auth.register') }}";
-    var logout_url = "{{ url_for('auth.logout') }}";
-    var default_error_message = "{{ _('Oops, something was wrong!') }}";
-    var empty_body_error_message = "{{ _('Your todo was empty!') }}";
-    var login_error_message = "{{ _('Empty username or password!') }}";
-</script>
+  <div id="app">
+    <h2>待办列表（最小 Vue3 组合式）</h2>
+
+    <div class="row">
+      <input
+        placeholder="输入待办内容后回车"
+        v-model="inputBody"
+        @keyup.enter="add"
+      />
+      <button @click="add">添加</button>
+    </div>
+
+    {% raw %}
+    <div class="counts">
+      全部: {{ allCount }}，
+      进行中: {{ activeCount }}，
+      已完成: {{ completedCount }}
+    </div>
+    {% endraw %}
+
+    <div class="filters">
+      <button @click="setFilter('all')" :disabled="filter==='all'">全部</button>
+      <button @click="setFilter('active')" :disabled="filter==='active'">进行中</button>
+      <button @click="setFilter('completed')" :disabled="filter==='completed'">已完成</button>
+      <button @click="clearCompleted" :disabled="completedCount===0">清除已完成</button>
+    </div>
+
+    <div v-if="visibleItems.length === 0" style="margin-top:10px;">
+      没有任务。
+    </div>
+    <ul v-else>
+      {% raw %}
+      <li v-for="item in visibleItems" :key="item.id">
+        <button @click="toggle(item)">{{ item.done ? '✔' : '□' }}</button>
+        <span :class="{ done: item.done }">{{ item.body }}</span>
+        <button @click="remove(item)">删除</button>
+      </li>
+      {% endraw %}
+    </ul>
+  </div>
+
+  <!-- Vue 3（浏览器全量构建） -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- axios -->
+  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
+
+  <script>
+    // 同源，无需设置 baseURL，直接用相对路径 /api/...
+    var createApp = Vue.createApp;
+    var ref = Vue.ref;
+    var computed = Vue.computed;
+    var onMounted = Vue.onMounted;
+
+    createApp({
+      setup: function () {
+        // 状态
+        var items = ref([]);              // [{id, body, done}]
+        var inputBody = ref("");
+        var filter = ref("all");          // 'all' | 'active' | 'completed'
+
+        // 计算属性
+        var allCount = computed(function () { return items.value.length; });
+        var activeCount = computed(function () {
+          return items.value.filter(function (i) { return !i.done; }).length;
+        });
+        var completedCount = computed(function () {
+          return items.value.filter(function (i) { return i.done; }).length;
+        });
+        var visibleItems = computed(function () {
+          if (filter.value === "active") {
+            return items.value.filter(function (i) { return !i.done; });
+          }
+          if (filter.value === "completed") {
+            return items.value.filter(function (i) { return i.done; });
+          }
+          return items.value;
+        });
+
+        // API
+        function load() {
+          return axios.get("/api/tasks")
+            .then(function (res) {
+              items.value = res.data.items || [];
+            })
+            .catch(function (err) {
+              alert("加载失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            });
+        }
+
+        function add() {
+          var body = (inputBody.value || "").trim();
+          if (!body) return;
+          inputBody.value = "";
+          return axios.post("/api/tasks", { body: body })
+            .then(function (res) {
+              if (res.data && res.data.item) {
+                items.value.push(res.data.item);
+              } else {
+                return load();
+              }
+            })
+            .catch(function (err) {
+              alert("创建失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            });
+        }
+
+        function toggle(item) {
+          return axios.patch("/api/tasks/" + item.id)
+            .then(function () {
+              item.done = !item.done;
+            })
+            .catch(function (err) {
+              alert("切换失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            });
+        }
+
+        function remove(item) {
+          return axios.delete("/api/tasks/" + item.id)
+            .then(function () {
+              items.value = items.value.filter(function (i) { return i.id !== item.id; });
+            })
+            .catch(function (err) {
+              alert("删除失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            });
+        }
+
+        function clearCompleted() {
+          return axios.delete("/api/tasks/clear_completed")
+            .then(function () {
+              items.value = items.value.filter(function (i) { return !i.done; });
+            })
+            .catch(function (err) {
+              alert("清除失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            });
+        }
+
+        function setFilter(name) {
+          filter.value = name;
+        }
+
+        onMounted(function () {
+          load();
+        });
+
+        return {
+          // 状态
+          inputBody: inputBody,
+          items: items,
+          filter: filter,
+          // 计算
+          allCount: allCount,
+          activeCount: activeCount,
+          completedCount: completedCount,
+          visibleItems: visibleItems,
+          // 方法
+          add: add,
+          toggle: toggle,
+          remove: remove,
+          clearCompleted: clearCompleted,
+          setFilter: setFilter
+        };
+      }
+    }).mount("#app");
+  </script>
 </body>
 </html>
