@@ -1,183 +1,330 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>极简待办（Flask 模板加载 + Vue3 组合式 + axios）</title>
-  <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 16px; }
-    .row { margin-bottom: 12px; }
-    .counts { margin: 8px 0; color: #555; }
-    .filters button { margin-right: 8px; }
-    ul { padding-left: 20px; }
-    li { margin: 6px 0; }
-    .done { color: #999; text-decoration: line-through; }
-  </style>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>英雄管理</title>
+    <style>
+        :root {
+            font-family: "Segoe UI", "Helvetica Neue", Arial, "Microsoft YaHei", sans-serif;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+        }
+
+        #app {
+            margin: 24px auto;
+            padding: 24px;
+            max-width: 640px;
+            background-color: #ffffff;
+            border: 1px solid #dcdcdc;
+            border-radius: 8px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 26px;
+            text-align: center;
+            color: #2c3e50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 16px;
+        }
+
+        th, td {
+            border: 1px solid #bfbfbf;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f0f3f6;
+        }
+
+        tbody tr:nth-child(every) {
+            background-color: #fafafa;
+        }
+
+        .form-section {
+            padding: 16px;
+            border: 1px solid #bfbfbf;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+
+        .form-row {
+            margin-bottom: 12px;
+        }
+
+        .form-row label {
+            display: inline-block;
+            width: 80px;
+            font-weight: bold;
+        }
+
+        .form-row input {
+            width: calc(100% - 90px);
+            padding: 6px 8px;
+            border: 1px solid #c0c0c0;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            margin-top: 8px;
+        }
+
+        button {
+            min-width: 80px;
+            padding: 8px 12px;
+            margin-right: 8px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background-color: #3b82f6;
+            color: #ffffff;
+            font-size: 14px;
+        }
+
+        button.secondary {
+            background-color: #9ca3af;
+        }
+
+        button.danger {
+            background-color: #ef4444;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        @media (max-width: 480px) {
+            #app {
+                margin: 12px;
+                padding: 16px;
+            }
+
+            .form-row label {
+                width: 100%;
+                margin-bottom: 4px;
+            }
+
+            .form-row input {
+                width: 100%;
+            }
+
+            table th, table td {
+                font-size: 13px;
+                padding: 6px 8px;
+            }
+
+            button {
+                width: 100%;
+                margin-bottom: 8px;
+            }
+
+            .button-group {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div id="app">
-    <h2>待办列表（最小 Vue3 组合式）</h2>
+<div id="app" v-cloak>
+    <h1>英雄管理面板</h1>
 
-    <div class="row">
-      <input
-        placeholder="输入待办内容后回车"
-        v-model="inputBody"
-        @keyup.enter="add"
-      />
-      <button @click="add">添加</button>
-    </div>
+    <section v-if="!isEditing" class="list-section">
+        <table>
+            <thead>
+            <tr>
+                <th>英雄名称</th>
+                <th>血量</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="hero in heroes" v-bind:key="hero.id">
+                <td>{{ hero.name }}</td>
+                <td>{{ hero.hp }}</td>
+                <td>
+                    <button type="button" v-on:click="startEditing(hero.id)">编辑</button>
+                    <button type="button" class="danger" v-on:click="removeHero(hero.id)">删除</button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <div class="form-section">
+                        <div class="form-row">
+                            <label for="create-name">英雄名称</label>
+                            <input id="create-name" type="text" v-model.trim="heroForAdd.name" placeholder="例如：盖伦">
+                        </div>
+                        <div class="form-row">
+                            <label for="create-hp">血量</label>
+                            <input id="create-hp" type="number" v-model.number="heroForAdd.hp" min="0">
+                        </div>
+                        <div class="button-group">
+                            <button type="button" v-on:click="addHero">增加</button>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
 
-    {% raw %}
-    <div class="counts">
-      全部: {{ allCount }}，
-      进行中: {{ activeCount }}，
-      已完成: {{ completedCount }}
-    </div>
-    {% endraw %}
+    <section v-else class="form-section">
+        <div class="form-row">
+            <label for="update-name">英雄名称</label>
+            <input id="update-name" type="text" v-model.trim="heroForUpdate.name">
+        </div>
+        <div class="form-row">
+            <label for="update-hp">血量</label>
+            <input id="update-hp" type="number" v-model.number="heroForUpdate.hp" min="0">
+        </div>
+        <div class="button-group">
+            <button type="button" v-on:click="updateHero">确认修改</button>
+            <button type="button" class="secondary" v-on:click="cancelEditing">取消</button>
+        </div>
+    </section>
+</div>
 
-    <div class="filters">
-      <button @click="setFilter('all')" :disabled="filter==='all'">全部</button>
-      <button @click="setFilter('active')" :disabled="filter==='active'">进行中</button>
-      <button @click="setFilter('completed')" :disabled="filter==='completed'">已完成</button>
-      <button @click="clearCompleted" :disabled="completedCount===0">清除已完成</button>
-    </div>
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+    var app = Vue.createApp({
+        setup: function () {
+            var heroes = Vue.ref([
+                { id: 1, name: '盖伦', hp: 318 },
+                { id: 2, name: '提莫', hp: 320 },
+                { id: 3, name: '安妮', hp: 419 },
+                { id: 4, name: '死歌', hp: 325 },
+                { id: 5, name: '米波', hp: 422 }
+            ]);
 
-    <div v-if="visibleItems.length === 0" style="margin-top:10px;">
-      没有任务。
-    </div>
-    <ul v-else>
-      {% raw %}
-      <li v-for="item in visibleItems" :key="item.id">
-        <button @click="toggle(item)">{{ item.done ? '✔' : '□' }}</button>
-        <span :class="{ done: item.done }">{{ item.body }}</span>
-        <button @click="remove(item)">删除</button>
-      </li>
-      {% endraw %}
-    </ul>
-  </div>
+            var heroForAdd = Vue.reactive(createEmptyHero());
+            var heroForUpdate = Vue.reactive(createEmptyHero());
+            var editingIndex = Vue.ref(-1);
+            var nextId = Vue.ref(calculateInitialMaxId(heroes.value));
 
-  <!-- Vue 3（浏览器全量构建） -->
-  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-  <!-- axios -->
-  <script src="https://cdn.jsdelivr.net/npm/axios@1.7.7/dist/axios.min.js"></script>
-
-  <script>
-    // 同源，无需设置 baseURL，直接用相对路径 /api/...
-    var createApp = Vue.createApp;
-    var ref = Vue.ref;
-    var computed = Vue.computed;
-    var onMounted = Vue.onMounted;
-
-    createApp({
-      setup: function () {
-        // 状态
-        var items = ref([]);              // [{id, body, done}]
-        var inputBody = ref("");
-        var filter = ref("all");          // 'all' | 'active' | 'completed'
-
-        // 计算属性
-        var allCount = computed(function () { return items.value.length; });
-        var activeCount = computed(function () {
-          return items.value.filter(function (i) { return !i.done; }).length;
-        });
-        var completedCount = computed(function () {
-          return items.value.filter(function (i) { return i.done; }).length;
-        });
-        var visibleItems = computed(function () {
-          if (filter.value === "active") {
-            return items.value.filter(function (i) { return !i.done; });
-          }
-          if (filter.value === "completed") {
-            return items.value.filter(function (i) { return i.done; });
-          }
-          return items.value;
-        });
-
-        // API
-        function load() {
-          return axios.get("/api/tasks")
-            .then(function (res) {
-              items.value = res.data.items || [];
-            })
-            .catch(function (err) {
-              alert("加载失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
+            var isEditing = Vue.computed(function () {
+                return editingIndex.value !== -1;
             });
+
+            function createEmptyHero() {
+                return { id: 0, name: '', hp: 0 };
+            }
+
+            function calculateInitialMaxId(list) {
+                var maxId = 0;
+                var i;
+                for (i = 0; i < list.length; i = i + 1) {
+                    if (list[i].id > maxId) {
+                        maxId = list[i].id;
+                    }
+                }
+                return maxId;
+            }
+
+            function prepareHeroName(name, id) {
+                if (name && name.length > 0) {
+                    return name;
+                }
+                return 'Hero#' + id;
+            }
+
+            function prepareHeroHp(hp) {
+                if (typeof hp === 'number' && !isNaN(hp) && hp >= 0) {
+                    return Math.floor(hp);
+                }
+                return 0;
+            }
+
+            function addHero() {
+                nextId.value = nextId.value + 1;
+                var newHero = {
+                    id: nextId.value,
+                    name: prepareHeroName(heroForAdd.name, nextId.value),
+                    hp: prepareHeroHp(heroForAdd.hp)
+                };
+                heroes.value.push(newHero);
+                Object.assign(heroForAdd, createEmptyHero());
+            }
+
+            function findHeroIndexById(heroId) {
+                var i;
+                for (i = 0; i < heroes.value.length; i = i + 1) {
+                    if (heroes.value[i].id === heroId) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
+            function removeHero(heroId) {
+                var index = findHeroIndexById(heroId);
+                if (index !== -1) {
+                    heroes.value.splice(index, 1);
+                    if (editingIndex.value === index) {
+                        cancelEditing();
+                    }
+                }
+            }
+
+            function startEditing(heroId) {
+                var index = findHeroIndexById(heroId);
+                if (index === -1) {
+                    return;
+                }
+                editingIndex.value = index;
+                Object.assign(heroForUpdate, heroes.value[index]);
+            }
+
+            function updateHero() {
+                if (editingIndex.value === -1) {
+                    return;
+                }
+                var updatedHero = {
+                    id: heroForUpdate.id,
+                    name: prepareHeroName(heroForUpdate.name, heroForUpdate.id),
+                    hp: prepareHeroHp(heroForUpdate.hp)
+                };
+                heroes.value.splice(editingIndex.value, 1, updatedHero);
+                cancelEditing();
+            }
+
+            function cancelEditing() {
+                editingIndex.value = -1;
+                Object.assign(heroForUpdate, createEmptyHero());
+            }
+
+            return {
+                heroes: heroes,
+                heroForAdd: heroForAdd,
+                heroForUpdate: heroForUpdate,
+                isEditing: isEditing,
+                addHero: addHero,
+                removeHero: removeHero,
+                startEditing: startEditing,
+                updateHero: updateHero,
+                cancelEditing: cancelEditing
+            };
         }
+    });
 
-        function add() {
-          var body = (inputBody.value || "").trim();
-          if (!body) return;
-          inputBody.value = "";
-          return axios.post("/api/tasks", { body: body })
-            .then(function (res) {
-              if (res.data && res.data.item) {
-                items.value.push(res.data.item);
-              } else {
-                return load();
-              }
-            })
-            .catch(function (err) {
-              alert("创建失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
-            });
-        }
-
-        function toggle(item) {
-          return axios.patch("/api/tasks/" + item.id)
-            .then(function () {
-              item.done = !item.done;
-            })
-            .catch(function (err) {
-              alert("切换失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
-            });
-        }
-
-        function remove(item) {
-          return axios.delete("/api/tasks/" + item.id)
-            .then(function () {
-              items.value = items.value.filter(function (i) { return i.id !== item.id; });
-            })
-            .catch(function (err) {
-              alert("删除失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
-            });
-        }
-
-        function clearCompleted() {
-          return axios.delete("/api/tasks/clear_completed")
-            .then(function () {
-              items.value = items.value.filter(function (i) { return !i.done; });
-            })
-            .catch(function (err) {
-              alert("清除失败: " + (err.response && err.response.data && err.response.data.message ? err.response.data.message : err.message));
-            });
-        }
-
-        function setFilter(name) {
-          filter.value = name;
-        }
-
-        onMounted(function () {
-          load();
-        });
-
-        return {
-          // 状态
-          inputBody: inputBody,
-          items: items,
-          filter: filter,
-          // 计算
-          allCount: allCount,
-          activeCount: activeCount,
-          completedCount: completedCount,
-          visibleItems: visibleItems,
-          // 方法
-          add: add,
-          toggle: toggle,
-          remove: remove,
-          clearCompleted: clearCompleted,
-          setFilter: setFilter
-        };
-      }
-    }).mount("#app");
-  </script>
+    app.mount('#app');
+</script>
 </body>
 </html>
