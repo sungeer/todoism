@@ -68,6 +68,7 @@
                 return -1;
             }
 
+            // 删除
             function removeHero(heroId) {
                 var index = findHeroIndexById(heroId);
                 if (index !== -1) {
@@ -111,7 +112,7 @@
                 heroForUpdate: heroForUpdate,
                 isEditing: isEditing,
                 addHero: addHero,
-                removeHero: removeHero,
+                removeHero: removeHero,  // 删除
                 startEditing: startEditing,
                 updateHero: updateHero,
                 cancelEditing: cancelEditing
