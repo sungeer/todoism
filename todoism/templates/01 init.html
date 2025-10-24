@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>步骤1：最小应用</title>
+    <style>
+        [v-cloak] { display: none; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", Arial; margin: 20px; }
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <h1>{{ title }}</h1>
+    <p>这是一个最小的 Vue3 应用</p>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+    (function () {
+        var ref = Vue.ref;
+
+        var app = Vue.createApp({
+            setup: function () {
+                var title = ref('英雄管理面板（步骤1）');
+                return {
+                    title: title
+                };
+            }
+        });
+
+        app.mount('#app');
+    })();
+</script>
+</body>
+</html>
