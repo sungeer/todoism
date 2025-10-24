@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>步骤2：静态列表</title>
+    <style>
+        [v-cloak]{display:none}
+        body{font-family:system-ui;margin:20px}
+        table{border-collapse:collapse;width:480px;max-width:100%}
+        th,td{border:1px solid #ccc;padding:8px;text-align:left}
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <h1>{{ title }}</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>英雄名称</th>
+            <th>血量</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr v-for="h in heroes" :key="h.id">
+            <td>{{ h.name }}</td>
+            <td>{{ h.hp }}</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+    (function () {
+        var ref = Vue.ref;
+
+        var app = Vue.createApp({
+            setup: function () {
+                var title = ref('英雄管理面板（步骤2）');
+                var heroes = ref([
+                    { id: 1, name: '盖伦', hp: 318 },
+                    { id: 2, name: '提莫', hp: 320 },
+                    { id: 3, name: '安妮', hp: 419 }
+                ]);
+                return { title: title, heroes: heroes };
+            }
+        });
+
+        app.mount('#app');
+    })();
+</script>
+</body>
+</html>
