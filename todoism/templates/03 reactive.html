@@ -18,11 +18,11 @@
 
     <div class="row">
         <label for="name">名称</label>
-        <input id="name" type="text" :value="addForm.name" @input="onAddNameInput">
+        <input id="name" type="text" v-bind:value="addForm.name" v-on:input="onAddNameInput">
     </div>
     <div class="row">
         <label for="hp">血量</label>
-        <input id="hp" type="number" min="0" :value="addForm.hp" @input="onAddHpInput">
+        <input id="hp" type="number" min="0" v-bind:value="addForm.hp" v-on:input="onAddHpInput">
     </div>
     <p>当前表单：{{ addForm }}</p>
 </div>

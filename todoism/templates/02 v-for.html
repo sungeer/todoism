@@ -22,7 +22,7 @@
         </tr>
         </thead>
         <tbody>
-        <tr v-for="h in heroes" :key="h.id">
+        <tr v-for="h in heroes" v-bind:key="h.id">
             <td>{{ h.name }}</td>
             <td>{{ h.hp }}</td>
         </tr>
