@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>步骤8：完整功能</title>
+    <style>
+        [v-cloak]{display:none}
+        body{font-family:system-ui;margin:20px}
+        table{border-collapse:collapse;width:640px;max-width:100%}
+        th,td{border:1px solid #ccc;padding:8px;text-align:left}
+        .box{border:1px solid #ccc;padding:12px;margin-top:12px;background:#fafafa}
+        label{display:inline-block;width:80px}
+        input{padding:6px 8px}
+        button{padding:6px 10px;margin-right:6px}
+    </style>
+</head>
+<body>
+<div id="app" v-cloak>
+    <h1>英雄管理面板（步骤8）</h1>
+
+    <section v-if="!isEditing">
+        <table>
+            <thead>
+            <tr>
+                <th>英雄名称</th>
+                <th>血量</th>
+                <th>操作</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr v-for="hero in heroes" :key="hero.id">
+                <td>{{ hero.name }}</td>
+                <td>{{ hero.hp }}</td>
+                <td>
+                    <button type="button" @click="startEditing(hero.id)">编辑</button>
+                    <button type="button" @click="removeHero(hero.id)">删除</button>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <div class="box">
+                        <div style="margin:6px 0">
+                            <label>英雄名称</label>
+                            <input type="text" :value="addForm.name" @input="onAddNameInput" placeholder="例如：盖伦">
+                        </div>
+                        <div style="margin:6px 0">
+                            <label>血量</label>
+                            <input type="number" min="0" :value="addForm.hp" @input="onAddHpInput">
+                        </div>
+                        <button type="button" @click="submitAdd">增加</button>
+                    </div>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section v-else class="box">
+        <div style="margin:6px 0">
+            <label>英雄名称</label>
+            <input type="text" :value="editForm.name" @input="onEditNameInput">
+        </div>
+        <div style="margin:6px 0">
+            <label>血量</label>
+            <input type="number" min="0" :value="editForm.hp" @input="onEditHpInput">
+        </div>
+        <button type="button" @click="submitEdit">确认修改</button>
+        <button type="button" @click="cancelEditing">取消</button>
+    </section>
+</div>
+
+<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+<script>
+    (function () {
+        var ref = Vue.ref;
+        var reactive = Vue.reactive;
+        var computed = Vue.computed;
+
+        // 纯函数区
+        function createEmptyHero() { return { id: 0, name: '', hp: '' }; }
+        function prepareHeroName(name, id) {
+            var s = String(name == null ? '' : name).trim();
+            if (s.length > 0) return s;
+            return 'Hero#' + id;
+        }
+        function prepareHeroHp(hp) {
+            var n = Number(hp);
+            if (Number.isFinite(n) && n >= 0) return Math.floor(n);
+            return 0;
+        }
+        function findHeroIndexById(list, heroId) {
+            var i; for (i=0;i<list.length;i=i+1){ if(list[i].id===heroId) return i; }
+            return -1;
+        }
+        function addHeroToList(list, nextId, draft) {
+            var id = nextId + 1;
+            var newHero = { id: id, name: prepareHeroName(draft.name, id), hp: prepareHeroHp(draft.hp) };
+            var copy = list.slice(); copy.push(newHero);
+            return { nextId: id, list: copy };
+        }
+        function updateHeroInList(list, draft) {
+            var idx = findHeroIndexById(list, draft.id);
+            if (idx === -1) return list;
+            var updated = { id: draft.id, name: prepareHeroName(draft.name, draft.id), hp: prepareHeroHp(draft.hp) };
+            var copy = list.slice(); copy.splice(idx, 1, updated);
+            return copy;
+        }
+        function removeHeroFromList(list, heroId) {
+            var idx = findHeroIndexById(list, heroId);
+            if (idx === -1) return list;
+            var copy = list.slice(); copy.splice(idx, 1);
+            return copy;
+        }
+
+        var app = Vue.createApp({
+            setup: function () {
+                var heroes = ref([
+                    { id: 1, name: '盖伦', hp: 318 },
+                    { id: 2, name: '提莫', hp: 320 },
+                    { id: 3, name: '安妮', hp: 419 },
+                    { id: 4, name: '死歌', hp: 325 },
+                    { id: 5, name: '米波', hp: 422 }
+                ]);
+
+                var nextId = ref((function () {
+                    var maxId = 0; var i;
+                    for (i=0;i<heroes.value.length;i=i+1) {
+                        if (heroes.value[i].id > maxId) { maxId = heroes.value[i].id; }
+                    }
+                    return maxId;
+                })());
+
+                var addForm = reactive(createEmptyHero());
+                var editForm = reactive(createEmptyHero());
+                var editingId = ref(null);
+
+                var isEditing = computed(function () { return editingId.value !== null; });
+
+                function onAddNameInput(e){ addForm.name = e.target.value; }
+                function onAddHpInput(e){ addForm.hp = e.target.value; }
+                function onEditNameInput(e){ editForm.name = e.target.value; }
+                function onEditHpInput(e){ editForm.hp = e.target.value; }
+
+                function submitAdd() {
+                    var result = addHeroToList(heroes.value, nextId.value, addForm);
+                    heroes.value = result.list;
+                    nextId.value = result.nextId;
+                    Object.assign(addForm, createEmptyHero());
+                }
+
+                function startEditing(heroId) {
+                    var i = findHeroIndexById(heroes.value, heroId);
+                    if (i === -1) return;
+                    var h = heroes.value[i];
+                    editingId.value = h.id;
+                    Object.assign(editForm, { id: h.id, name: h.name, hp: String(h.hp) });
+                }
+
+                function submitEdit() {
+                    if (editingId.value === null) return;
+                    if (typeof editForm.id !== 'number' || editForm.id <= 0) return;
+                    heroes.value = updateHeroInList(heroes.value, editForm);
+                    cancelEditing();
+                }
+
+                function cancelEditing() {
+                    editingId.value = null;
+                    Object.assign(editForm, createEmptyHero());
+                }
+
+                function removeHero(heroId) {
+                    heroes.value = removeHeroFromList(heroes.value, heroId);
+                    if (editingId.value === heroId) {
+                        cancelEditing();
+                    }
+                }
+
+                return {
+                    heroes: heroes,
+                    addForm: addForm,
+                    editForm: editForm,
+                    isEditing: isEditing,
+                    onAddNameInput: onAddNameInput,
+                    onAddHpInput: onAddHpInput,
+                    onEditNameInput: onEditNameInput,
+                    onEditHpInput: onEditHpInput,
+                    submitAdd: submitAdd,
+                    startEditing: startEditing,
+                    submitEdit: submitEdit,
+                    cancelEditing: cancelEditing,
+                    removeHero: removeHero
+                };
+            }
+        });
+
+        app.mount('#app');
+    })();
+</script>
+</body>
+</html>
