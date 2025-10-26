@@ -1,4 +1,4 @@
-from viper.models.model_base import BaseModel
+from todoism.models.model_base import BaseModel
 
 
 class BlessModel(BaseModel):

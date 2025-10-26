@@ -1,6 +1,6 @@
 from contextlib import suppress
 
-from viper.cores.core_db import get_db_conn
+from todoism.cores.core_db import get_db_conn
 
 
 class BaseModel:
