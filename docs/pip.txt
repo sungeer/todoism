@@ -17,4 +17,6 @@ python -m pip install waitress
 
 waitress --host=127.0.0.1 --port=7788 viper:wsgi_app
 
+huey_consumer viper.delays.huey_instance.huey
+
 
